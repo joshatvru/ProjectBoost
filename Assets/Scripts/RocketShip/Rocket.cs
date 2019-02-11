@@ -5,9 +5,12 @@ using UnityEngine;
 
 public class Rocket : MonoBehaviour
 {
+    Rigidbody rigidBody;
+
     // Start is called before the first frame update
     void Start()
     {
+        rigidBody = GetComponent<Rigidbody>();
         
     }
 
@@ -22,7 +25,7 @@ public class Rocket : MonoBehaviour
         //Thrust on space key
         if (Input.GetKey(KeyCode.Space))
         {
-
+            rigidBody.AddRelativeForce(Vector3.up);
 
         }
         //Left on 'a' key
