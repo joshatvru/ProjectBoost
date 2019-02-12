@@ -1,12 +1,20 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
+using UnityEngine.SceneManagement;
+
 
 public class Rocket : MonoBehaviour
 {
     [SerializeField] float rcsThrust = 100f;
     [SerializeField] float mainThrust = 100f;
+    [SerializeField] AudioClip mainEngine;
+    [SerializeField] AudioClip explodeShip;
+    [SerializeField] AudioClip finishLevel;
+
+
+
+    enum State {Alive, Dead, Transcending};
+    State state = State.Alive;
+
 
     Rigidbody rigidBody;
     AudioSource rocketSound;
@@ -24,67 +32,115 @@ public class Rocket : MonoBehaviour
     void Update()
     {
      
-        Thrust();
-        Rotate();
+        if (state == State.Alive)
+        {
+
+        
+        RespondToThrustInput();
+        RespondToRotateInput();
+        }
     }
 
-    private void Rotate()
+    private void RespondToRotateInput()
     {
         rigidBody.freezeRotation = true; //take manual control
 
         float rotationThisFrame = rcsThrust * Time.deltaTime;
         //Left on 'a' key
-        if (Input.GetKey(KeyCode.A))
-        {
-            transform.Rotate(Vector3.forward * rotationThisFrame); 
+       
+        
+            if (Input.GetKey(KeyCode.A))
+            {
+                transform.Rotate(Vector3.forward * rotationThisFrame);
 
-        }
-        //Left on 'd' key
-        else if (Input.GetKey(KeyCode.D))
-        {
-            transform.Rotate(-Vector3.forward * rotationThisFrame);
-        }
+            }
+            //Left on 'd' key
+            else if (Input.GetKey(KeyCode.D))
+            {
+                transform.Rotate(-Vector3.forward * rotationThisFrame);
+            }
+        
 
         rigidBody.freezeRotation = false; //resume physics control
     }
 
-    private void Thrust()
+    private void RespondToThrustInput()
     {
         //Thrust on space key
-        
 
-        if (Input.GetKey(KeyCode.Space))
+        
+            if (Input.GetKey(KeyCode.Space))
         {
-            rigidBody.AddRelativeForce(Vector3.up * mainThrust);
-            if (!rocketSound.isPlaying)
-            {
-                rocketSound.Play(); //check sound and play if not playing
-            }
+            ApplyThrust();
 
         }
         else
+            {
+                rocketSound.Stop(); //stop rocket sound playing
+            }
+        
+    }
+
+    private void ApplyThrust()
+    {
+        rigidBody.AddRelativeForce(Vector3.up * mainThrust);
+        if (!rocketSound.isPlaying)
         {
-            rocketSound.Stop(); //stop rocket sound playing
+            rocketSound.PlayOneShot(mainEngine); //check sound and play if not playing
         }
     }
 
     void OnCollisionEnter(Collision collision)
     {
+        if (state != State.Alive)
+        {
+            return;
+        }
         switch (collision.gameObject.tag)
         {
             case ("Friendly"):
                
                 break;
-            case ("Fuel"):
+            case ("Finish"):
+                StartSuccessSequence();
                 break;
             default:
-              
-                    break;
+                StartDeathSequence();
+
+                break;
 
 
         }
 
         
           
+    }
+
+    private void StartDeathSequence()
+    {
+        rocketSound.Stop();
+        rocketSound.PlayOneShot(explodeShip);
+        state = State.Dead;
+        Invoke("LoadRestart", 1f);
+    }
+
+    private void StartSuccessSequence()
+    {
+        rocketSound.Stop();
+        rocketSound.PlayOneShot(finishLevel);
+
+        state = State.Transcending;
+        Invoke("LoadNextScene", 1f); //Paramatise this time. 
+    }
+
+    private void LoadRestart()
+    {
+        state = State.Alive;
+        SceneManager.LoadScene(0);
+    }
+
+    private void LoadNextScene()
+    {
+        SceneManager.LoadScene(1); //Allow for more then 2 levels
     }
 }
