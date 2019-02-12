@@ -9,12 +9,16 @@ public class Rocket : MonoBehaviour
     [SerializeField] AudioClip mainEngine;
     [SerializeField] AudioClip explodeShip;
     [SerializeField] AudioClip finishLevel;
+    [SerializeField] float levelLoadDelay = 2f;
 
+
+    [SerializeField] ParticleSystem mainEngineParticles;
+    [SerializeField] ParticleSystem explodeShipParticles;
+    [SerializeField] ParticleSystem finishLevelParticles;
 
 
     enum State {Alive, Dead, Transcending};
     State state = State.Alive;
-
 
     Rigidbody rigidBody;
     AudioSource rocketSound;
@@ -22,6 +26,7 @@ public class Rocket : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        
         rigidBody = GetComponent<Rigidbody>();
         rocketSound = GetComponent<AudioSource>();
 
@@ -31,12 +36,12 @@ public class Rocket : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-     
+        
         if (state == State.Alive)
         {
+           
 
-        
-        RespondToThrustInput();
+            RespondToThrustInput();
         RespondToRotateInput();
         }
     }
@@ -72,22 +77,32 @@ public class Rocket : MonoBehaviour
             if (Input.GetKey(KeyCode.Space))
         {
             ApplyThrust();
-
+            
+           
         }
         else
-            {
-                rocketSound.Stop(); //stop rocket sound playing
-            }
-        
+        {
+            rocketSound.Stop(); //stop rocket sound playing
+            mainEngineParticles.Stop();
+
+        }
+
     }
+
+    
+
+
 
     private void ApplyThrust()
     {
-        rigidBody.AddRelativeForce(Vector3.up * mainThrust);
+        
+        rigidBody.AddRelativeForce(Vector3.up * mainThrust * Time.deltaTime);
         if (!rocketSound.isPlaying)
         {
             rocketSound.PlayOneShot(mainEngine); //check sound and play if not playing
         }
+        mainEngineParticles.Play();
+
     }
 
     void OnCollisionEnter(Collision collision)
@@ -118,19 +133,23 @@ public class Rocket : MonoBehaviour
 
     private void StartDeathSequence()
     {
+
         rocketSound.Stop();
         rocketSound.PlayOneShot(explodeShip);
+        explodeShipParticles.Play();
         state = State.Dead;
-        Invoke("LoadRestart", 1f);
+    
+        Invoke("LoadRestart", levelLoadDelay);
     }
 
     private void StartSuccessSequence()
     {
         rocketSound.Stop();
         rocketSound.PlayOneShot(finishLevel);
-
+        finishLevelParticles.Play();
+       
         state = State.Transcending;
-        Invoke("LoadNextScene", 1f); //Paramatise this time. 
+        Invoke("LoadNextScene", levelLoadDelay); //Paramatise this time. 
     }
 
     private void LoadRestart()
