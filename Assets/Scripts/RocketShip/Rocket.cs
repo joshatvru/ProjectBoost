@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 
@@ -17,8 +18,17 @@ public class Rocket : MonoBehaviour
     [SerializeField] ParticleSystem finishLevelParticles;
 
 
-    enum State {Alive, Dead, Transcending};
+    enum State {Alive, Dead, Transcending };
+
+
+    bool DebugEnabled = false;
+
+
+
+
     State state = State.Alive;
+    
+
 
     Rigidbody rigidBody;
     AudioSource rocketSound;
@@ -42,7 +52,51 @@ public class Rocket : MonoBehaviour
            
 
             RespondToThrustInput();
-        RespondToRotateInput();
+            RespondToRotateInput();
+            RespondToLevelInput();
+
+            if (Debug.isDebugBuild)
+            {
+                RespondToColisionDebug();
+            }
+           
+        }
+    }
+
+    private void RespondToColisionDebug()
+    { 
+        
+        if (Input.GetKeyDown(KeyCode.C))
+        {
+
+            DebugEnabled = !DebugEnabled; //toggle (remember!!)
+
+               
+            }
+       
+
+    }
+
+    private void RespondToLevelInput()
+    {
+        int maxLevels = SceneManager.sceneCount;
+      
+        int level = SceneManager.GetActiveScene().buildIndex;
+        
+        if (level < maxLevels)
+        {
+            if (Input.GetKey(KeyCode.L))
+            {
+
+                SceneManager.LoadScene(level + 1);
+            }
+        } else {
+
+            if (Input.GetKey(KeyCode.L))
+            {
+
+                SceneManager.LoadScene(0);
+            }
         }
     }
 
@@ -107,7 +161,8 @@ public class Rocket : MonoBehaviour
 
     void OnCollisionEnter(Collision collision)
     {
-        if (state != State.Alive)
+        
+        if (state != State.Alive || DebugEnabled)
         {
             return;
         }
